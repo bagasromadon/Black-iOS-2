@@ -41,6 +41,9 @@ bool OnEvent(const SDL_Event& e);
 void Apply(int port, input::Pad& pad);
 // inside the ImGui frame: the controls over the picture
 void Draw();
+// render thread, once the renderer is up: the ImGui texture of the buttons' artwork (button_atlas.h); until then, or
+// where a control has no artwork, it is drawn as before
+void SetArt(void* texture);
 // any touch on the screen in the last few seconds: the controls show
 bool Shown();
 // main thread, each turn of the event loop: what the input asks of the window (the on-screen keyboard)

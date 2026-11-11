@@ -29,6 +29,13 @@
 #include "core/log.h"
 #include "d3d/gpu_frame.h"
 #include "gpu/backend.h"
+
+// the touch buttons' artwork: a PNG atlas, decoded once (tools/make_button_atlas.py makes both headers)
+#define STB_IMAGE_IMPLEMENTATION
+#define STBI_ONLY_PNG
+#define STBI_NO_STDIO
+#include "stb_image.h"
+#include "button_atlas_png.h"
 #include "gpu/shaders.h"
 #include "gpu/texture.h"
 #include "gpu/vertex.h"
@@ -1023,6 +1030,7 @@ private:
     bool CreateFrames();
     bool CreateFixedImages();
     bool InitUi();
+    void InitUiArt();
 
     // memory and objects
     bool CreateImage(Image& im, VkFormat fmt, uint32_t w, uint32_t h, uint32_t d, uint32_t layers, uint32_t levels,
@@ -1178,6 +1186,7 @@ private:
     std::unordered_map<uint64_t, Target> targets_;
     std::unordered_map<uint64_t, Tex> textures_;
     Image lut_;
+    Image ui_art_;  // the touch buttons' atlas
     Image dummy_[3];  // 2D, 3D, cube
     VkSampler linear_ = VK_NULL_HANDLE, point_ = VK_NULL_HANDLE;
     VkDescriptorPool ui_pool_ = VK_NULL_HANDLE;
@@ -1220,6 +1229,7 @@ bool VulkanBackend::Init(uint32_t width, uint32_t height) {
     if (!CreateLayouts() || !CreateFrames() || !CreateSwapchain() || !CreateFixedImages()) return false;
     Begin();
     ui_ = InitUi();
+    if (ui_) InitUiArt();
     scale_ = app::RenderScale(guest_h_);
     LOGI("vulkan: %ux%u guest, %ux%u screen, render scale %.3f", width, height, swap_extent_.width,
          swap_extent_.height, scale_);
@@ -1701,6 +1711,30 @@ bool VulkanBackend::InitUi() {
     if (!dynamic_) ii.RenderPass = Pass(swap_fmt_, VK_FORMAT_UNDEFINED);
     ImGui::GetIO().BackendRendererName = "vulkan";
     return ImGui_ImplVulkan_Init(&ii);
+}
+
+// the touch buttons' atlas into an image and an ImGui texture for touch::Draw; without it the buttons stay drawn in code
+void VulkanBackend::InitUiArt() {
+    int w = 0, h = 0, n = 0;
+    unsigned char* rgba = stbi_load_from_memory(btnatlas::kPng, int(sizeof btnatlas::kPng), &w, &h, &n, 4);
+    if (!rgba) {
+        LOGE("vulkan: the button atlas did not decode");
+        return;
+    }
+    std::vector<uint8_t> bgra(size_t(w) * size_t(h) * 4);
+    for (size_t i = 0; i < size_t(w) * size_t(h); i++) {
+        bgra[i * 4 + 0] = rgba[i * 4 + 2];
+        bgra[i * 4 + 1] = rgba[i * 4 + 1];
+        bgra[i * 4 + 2] = rgba[i * 4 + 0];
+        bgra[i * 4 + 3] = rgba[i * 4 + 3];
+    }
+    stbi_image_free(rgba);
+    if (!PixelImage(ui_art_, bgra, uint32_t(w) * 4, uint32_t(w), uint32_t(h))) return;
+    Submit(true, false);  // the copy done before the first frame draws it; recording begins again
+    std::lock_guard lock(app::UiLock());
+    VkDescriptorSet set = ImGui_ImplVulkan_AddTexture(linear_, ui_art_.view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    if (!set) return;
+    touch::SetArt(reinterpret_cast<void*>(set));
 }
 
 // ---- memory and objects

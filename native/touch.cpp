@@ -27,6 +27,7 @@
 #include <toml++/toml.hpp>
 
 #include "app/app.h"
+#include "button_atlas.h"
 #include "common/aspect.h"
 #include "common/keys.h"
 #include "common/menu.h"
@@ -1325,6 +1326,45 @@ void DrawIcon(const Pen& p, Icon icon) {
 // a colour at the layout's opacity
 ImU32 Fade(int r, int g, int b, int a) { return IM_COL32(r, g, b, int(float(a) * g_opacity)); }
 
+// the buttons' artwork: its atlas texture, set once by the renderer, and which of its cells an icon has
+std::atomic<void*> g_art{nullptr};
+
+// -1 where the icon has no artwork and stays drawn in code
+int ArtOf(Icon icon) {
+    switch (icon) {
+        case Icon::Bullet: return btnatlas::kFire;
+        case Icon::Scope: return btnatlas::kAim;
+        case Icon::Mode: return btnatlas::kMode;
+        case Icon::Reload: return btnatlas::kReload;
+        case Icon::Crouch: return btnatlas::kCrouch;
+        case Icon::Knife: return btnatlas::kMelee;
+        case Icon::Hand: return btnatlas::kUse;
+        case Icon::Grenade: return btnatlas::kGrenade;
+        case Icon::Swap: return btnatlas::kWeaponNext;
+        case Icon::Health: return btnatlas::kHealth;
+        case Icon::Map:
+        case Icon::Back: return btnatlas::kBack;
+        case Icon::Pause: return btnatlas::kPause;
+        case Icon::Gyro: return btnatlas::kGyro;
+        case Icon::Suppressor: return btnatlas::kSuppressor;
+        default: return -1;
+    }
+}
+
+// a button's artwork, its circle centred on (cx, cy) with radius r; the badge above the circle stands out of it. A held
+// button shrinks a little and lights up. fade: 100 shown, less for a hidden control in the editor
+void DrawArt(ImDrawList* dl, void* tex, int art, float cx, float cy, float r, bool on, int fade) {
+    const btnatlas::Cell& c = btnatlas::kCells[art];
+    float k = on ? 0.93f : 1.0f;
+    float w = 2 * r * k;
+    float h = w * btnatlas::kAspect;
+    float x0 = cx - w * 0.5f;
+    float y0 = cy - h * btnatlas::kCentreY;
+    dl->AddImage(reinterpret_cast<ImTextureID>(tex), ImVec2(x0, y0), ImVec2(x0 + w, y0 + h), ImVec2(c.u0, c.v0),
+                 ImVec2(c.u1, c.v1), Fade(255, 255, 255, 255 * fade / 100));
+    if (on) dl->AddCircleFilled(ImVec2(cx, cy), r * k, Fade(255, 255, 255, 45), 48);
+}
+
 void DrawStick(ImDrawList* dl, float th) {
     // at rest in its place, else where the thumb came down
     float r = Radius(kStick);
@@ -1379,6 +1419,8 @@ void DrawEditorBar(ImDrawList* dl, float th) {
 
 }  // namespace
 
+void SetArt(void* texture) { g_art.store(texture); }
+
 void Draw() {
     std::lock_guard lock(g_lock);
     EnsureLayout();
@@ -1397,9 +1439,15 @@ void Draw() {
         bool hidden = g_layout[i].hidden;
         bool on = !editing && (g_pressed[i] || (b.press == kGyro && gyro::CurrentMode() != gyro::kOff));
         int fade = hidden ? 40 : 100;  // a hidden control shows faint in the editor
-        dl->AddCircleFilled(ImVec2(cx, cy), r, on ? Fade(255, 255, 255, 70) : Fade(0, 0, 0, 80 * fade / 100), 48);
-        dl->AddCircle(ImVec2(cx, cy), r, Fade(255, 255, 255, 60 * fade / 100), 48, th * 0.6f);
-        DrawIcon({dl, ImVec2(cx, cy), r, on ? Fade(255, 255, 255, 230) : Fade(255, 255, 255, 180 * fade / 100), th}, b.icon);
+        void* art_tex = g_art.load();
+        int art = art_tex ? ArtOf(b.icon) : -1;
+        if (art >= 0) {
+            DrawArt(dl, art_tex, art, cx, cy, r, on, fade);
+        } else {
+            dl->AddCircleFilled(ImVec2(cx, cy), r, on ? Fade(255, 255, 255, 70) : Fade(0, 0, 0, 80 * fade / 100), 48);
+            dl->AddCircle(ImVec2(cx, cy), r, Fade(255, 255, 255, 60 * fade / 100), 48, th * 0.6f);
+            DrawIcon({dl, ImVec2(cx, cy), r, on ? Fade(255, 255, 255, 230) : Fade(255, 255, 255, 180 * fade / 100), th}, b.icon);
+        }
         if (b.press == kGyro) {
             const char* mode = gyro::ModeName();
             float fs = r * 0.55f;
