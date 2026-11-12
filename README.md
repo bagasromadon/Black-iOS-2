@@ -83,6 +83,7 @@ Built directly into the in-game menu under **OPTIONS → CHEATS**:
 
 ## Credits & Acknowledgments
 
+- **[Jimbon](https://github.com/jimbon25)** - Developer of Native iOS Port.
 - **[TGP482](https://github.com/TGP482/XboxXBE-Recomp)** — Developer of *XboxXBE-Recomp*, the ahead-of-time static recompiler and portable Xbox kernel runtime (Direct3D 8, XAudio/DSound, XAPI).
 - **[RanggaCasper](https://github.com/RanggaCasper/Black-Android)** — Developer of the Android native port, custom touch layout system, gyroscope integration, and UI overlays.
 - **[j1mb (Dayumm)](https://github.com/jimbon25/Black-iOS)** — iOS port development: Darwin Mach VM memory subsystem, Apple Silicon 16KB hardware page alignment, MoltenVK Metal backend integration, multi-thread GCD surface dispatch, edge-to-edge UI display, and packaging.
