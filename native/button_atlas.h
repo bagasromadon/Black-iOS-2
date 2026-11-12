@@ -3,33 +3,34 @@
 
 namespace btnatlas {
 
-// a button's place in the atlas: its corners as shares of the atlas
+// a button's place in the atlas: its corners as shares of the atlas; every cell is a square, the circle filling it
 struct Cell {
     float u0, v0, u1, v1;
 };
-// a cell is taller than wide by the badge above the circle: its height in widths, and the circle's centre as
-// a share of that height from the top
-constexpr float kAspect = 1.087500f;
-constexpr float kCentreY = 0.540230f;
 
-enum Art : int { kAim, kBack, kCrouch, kFire, kMode, kGrenade, kGyro, kHealth, kUse, kMelee, kPause, kReload, kSuppressor, kWeaponPrev, kWeaponNext, kCount };
+enum Art : int { kAim, kBack, kCrouch, kFire, kMode, kGrenade, kGyro, kHealth, kUse, kMelee, kPause, kReload, kSuppressor, kWeapon, kUp, kDown, kLeft, kRight, kStickBase, kStick, kCount };
 
 constexpr Cell kCells[kCount] = {
-    {0.002439f, 0.003745f, 0.197561f, 0.329588f},  // Aim
-    {0.202439f, 0.003745f, 0.397561f, 0.329588f},  // Back
-    {0.402439f, 0.003745f, 0.597561f, 0.329588f},  // Crouch
-    {0.602439f, 0.003745f, 0.797561f, 0.329588f},  // Fire
-    {0.802439f, 0.003745f, 0.997561f, 0.329588f},  // Mode
-    {0.002439f, 0.337079f, 0.197561f, 0.662921f},  // Grenade
-    {0.202439f, 0.337079f, 0.397561f, 0.662921f},  // Gyro
-    {0.402439f, 0.337079f, 0.597561f, 0.662921f},  // Health
-    {0.602439f, 0.337079f, 0.797561f, 0.662921f},  // Use
-    {0.802439f, 0.337079f, 0.997561f, 0.662921f},  // Melee
-    {0.002439f, 0.670412f, 0.197561f, 0.996255f},  // Pause
-    {0.202439f, 0.670412f, 0.397561f, 0.996255f},  // Reload
-    {0.402439f, 0.670412f, 0.597561f, 0.996255f},  // Suppressor
-    {0.602439f, 0.670412f, 0.797561f, 0.996255f},  // WeaponPrev
-    {0.802439f, 0.670412f, 0.997561f, 0.996255f},  // WeaponNext
+    {0.002439f, 0.003049f, 0.197561f, 0.246951f},  // Aim
+    {0.202439f, 0.003049f, 0.397561f, 0.246951f},  // Back
+    {0.402439f, 0.003049f, 0.597561f, 0.246951f},  // Crouch
+    {0.602439f, 0.003049f, 0.797561f, 0.246951f},  // Fire
+    {0.802439f, 0.003049f, 0.997561f, 0.246951f},  // Mode
+    {0.002439f, 0.253049f, 0.197561f, 0.496951f},  // Grenade
+    {0.202439f, 0.253049f, 0.397561f, 0.496951f},  // Gyro
+    {0.402439f, 0.253049f, 0.597561f, 0.496951f},  // Health
+    {0.602439f, 0.253049f, 0.797561f, 0.496951f},  // Use
+    {0.802439f, 0.253049f, 0.997561f, 0.496951f},  // Melee
+    {0.002439f, 0.503049f, 0.197561f, 0.746951f},  // Pause
+    {0.202439f, 0.503049f, 0.397561f, 0.746951f},  // Reload
+    {0.402439f, 0.503049f, 0.597561f, 0.746951f},  // Suppressor
+    {0.602439f, 0.503049f, 0.797561f, 0.746951f},  // Weapon
+    {0.802439f, 0.503049f, 0.997561f, 0.746951f},  // Up
+    {0.002439f, 0.753049f, 0.197561f, 0.996951f},  // Down
+    {0.202439f, 0.753049f, 0.397561f, 0.996951f},  // Left
+    {0.402439f, 0.753049f, 0.597561f, 0.996951f},  // Right
+    {0.602439f, 0.753049f, 0.797561f, 0.996951f},  // StickBase
+    {0.802439f, 0.753049f, 0.997561f, 0.996951f},  // Stick
 };
 
 }  // namespace btnatlas

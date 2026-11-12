@@ -1340,30 +1340,34 @@ int ArtOf(Icon icon) {
         case Icon::Knife: return btnatlas::kMelee;
         case Icon::Hand: return btnatlas::kUse;
         case Icon::Grenade: return btnatlas::kGrenade;
-        case Icon::Swap: return btnatlas::kWeaponNext;
+        case Icon::Swap: return btnatlas::kWeapon;
         case Icon::Health: return btnatlas::kHealth;
         case Icon::Map:
         case Icon::Back: return btnatlas::kBack;
         case Icon::Pause: return btnatlas::kPause;
         case Icon::Gyro: return btnatlas::kGyro;
         case Icon::Suppressor: return btnatlas::kSuppressor;
+        case Icon::Up: return btnatlas::kUp;
+        case Icon::Down: return btnatlas::kDown;
+        case Icon::Left: return btnatlas::kLeft;
+        case Icon::Right: return btnatlas::kRight;
         default: return -1;
     }
 }
 
-// a button's artwork, its circle centred on (cx, cy) with radius r; the badge above the circle stands out of it. A held
-// button shrinks a little and lights up. fade: 100 shown, less for a hidden control in the editor
+// a button's artwork, its circle centred on (cx, cy) with radius r. A held button shrinks a little and lights up.
+// fade: 100 shown, less for a hidden control in the editor
 void DrawArt(ImDrawList* dl, void* tex, int art, float cx, float cy, float r, bool on, int fade) {
     const btnatlas::Cell& c = btnatlas::kCells[art];
     float k = on ? 0.93f : 1.0f;
-    float w = 2 * r * k;
-    float h = w * btnatlas::kAspect;
-    float x0 = cx - w * 0.5f;
-    float y0 = cy - h * btnatlas::kCentreY;
-    dl->AddImage(reinterpret_cast<ImTextureID>(tex), ImVec2(x0, y0), ImVec2(x0 + w, y0 + h), ImVec2(c.u0, c.v0),
-                 ImVec2(c.u1, c.v1), Fade(255, 255, 255, 255 * fade / 100));
+    dl->AddImage(reinterpret_cast<ImTextureID>(tex), ImVec2(cx - r * k, cy - r * k), ImVec2(cx + r * k, cy + r * k),
+                 ImVec2(c.u0, c.v0), ImVec2(c.u1, c.v1), Fade(255, 255, 255, 255 * fade / 100));
     if (on) dl->AddCircleFilled(ImVec2(cx, cy), r * k, Fade(255, 255, 255, 45), 48);
 }
+
+// how far the stick's thumb artwork travels from the middle, as a share of the base's radius: it is most of the base
+// across, so a full push brings it to the edge and no further
+constexpr float kStickTravel = 0.28f;
 
 void DrawStick(ImDrawList* dl, float th) {
     // at rest in its place, else where the thumb came down
@@ -1375,6 +1379,17 @@ void DrawStick(ImDrawList* dl, float th) {
             at = ImVec2(f.x0, f.y0);
             held = true;
         }
+    if (void* tex = g_art.load()) {  // the base, and the thumb over it
+        ImU32 col = Fade(255, 255, 255, held ? 255 : 210);
+        const btnatlas::Cell& base = btnatlas::kCells[btnatlas::kStickBase];
+        const btnatlas::Cell& thumb = btnatlas::kCells[btnatlas::kStick];
+        dl->AddImage(reinterpret_cast<ImTextureID>(tex), ImVec2(at.x - r, at.y - r), ImVec2(at.x + r, at.y + r),
+                     ImVec2(base.u0, base.v0), ImVec2(base.u1, base.v1), col);
+        ImVec2 knob(at.x + g_stick_x * r * kStickTravel, at.y - g_stick_y * r * kStickTravel);
+        dl->AddImage(reinterpret_cast<ImTextureID>(tex), ImVec2(knob.x - r, knob.y - r), ImVec2(knob.x + r, knob.y + r),
+                     ImVec2(thumb.u0, thumb.v0), ImVec2(thumb.u1, thumb.v1), col);
+        return;
+    }
     dl->AddCircleFilled(at, r, Fade(0, 0, 0, held ? 80 : 55), 64);
     dl->AddCircle(at, r, Fade(255, 255, 255, held ? 110 : 70), 64, th * 0.7f);
     for (int i = 0; i < 4; i++) {  // the four directions
